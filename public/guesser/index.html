@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guesser Screen</title>
+    <link href="style.css" rel="stylesheet" />
+</head>
+
+<body>
+    <!-- Enter guesses here -->
+    <div class="container guesser-input">
+        <!-- <input type="text" class="guesser-input-name" id="name-input" placeholder="Name" /> -->
+        <p>Player Name: <span id="player-name"></span></p>
+        <input type="text" class="guesser-input-guess" id="guess-input" placeholder="Guess" />
+        <button id="send-button">Send</button>
+    </div>
+    <!-- <p class="question-container" id="questions"></p>
+    <div id="answers" class="option-container">
+    </div> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
