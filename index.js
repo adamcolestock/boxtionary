@@ -2,16 +2,17 @@ let express = require('express');
 let app = express();
 app.use('/', express.static('public'));
 
-//target words
-let targets = [{
-    target: "pizza"
-}, {
-    target: "flower"
-}, {
-    target: "car"
-}];
+//Set target words
+let targets = ["pizza", "flower", "car", "ice cream", "bicycle", "sun", "camel", "tree","umbrella", "suitcase", "bed", "chair", "boat", "lion", "snake", "doorknob", "earth", "moustache", "lipstick", "guitar", "shoe", "missile", "heart", "banana", "clown"];
 
+let playerDB = [];
 
+let timeLimit = 30;
+let targetNo = 0;
+let drawersNo = 0;
+let guessersNo = 0;
+let numCorrect = 0;
+let roundOver = false;
 
 //Initialize the actual HTTP server
 let http = require('http');
@@ -24,98 +25,151 @@ server.listen(port, () => {
 //Initialize socket.io
 let io = require('socket.io').listen(server);
 
-let drawer = io.of('/drawer');
-let guesser = io.of('/guesser');
-let targetNo = 0;
-
-var srvSockets = io.sockets.sockets;
+//track the number of sockets
+// var srvSockets = io.sockets.sockets;
 // let numClients = Object.keys(srvSockets).length;
 
-//Listen for users connecting to main page
-//If they are the first to sign on direct  them to the drawer name space
 io.sockets.on('connection', function (socket) {
     console.log("We have a new client: " + socket.id);
 
-    let numClients = Object.keys(srvSockets).length;
-    console.log(numClients);
+    socket.on('new-player', (data) => {
+        socket.username = data.username;
+        socket.role = data.role;
+        socket.score = data.score;
+        console.log('Registered new player ' + socket.username);
+        playerDB.push({ id: socket.id, username: socket.username, role: socket.role, score: socket.score });
+        io.sockets.emit('update-playerlist', playerDB);
+    })
 
-    if (numClients == 1) {
-        socket.role = "drawer";
-    } else{
-        socket.role = "guesser";
-    }
 
-    socket.emit('assign-role');
+    //Admin messages
 
-    // //Listen for a message named 'msg' from this client
-    // socket.on('msg', function (data) {
-    //     //Data can be numbers, strings, objects
-    //     console.log("Received a 'msg' event");
-    //     console.log(data);
+    //Start the round
+    socket.on('start-round', () => {
 
-    //     //Send a response to all clients, including this one
-    //     io.sockets.emit('msg', data);
-    // });
+        console.log('admin has requested round start');
+
+        let isDrawer = false;
+        let isGuesser = false;
+        roundOver = false;
+        numCorrect = 0;
+        drawersNo = 0;
+        guessersNo = 0;
+
+        // Count the number of drawers and guessers
+        for (let i = 0; i < playerDB.length; i++) {
+            if (playerDB[i].role == "guesser") {
+                isGuesser = true;
+                guessersNo++;
+            } else if (playerDB[i].role == "drawer") {
+                isDrawer = true;
+                drawersNo++;
+            }
+        }
+
+        // Only start round if there is at least one of each
+        if (isDrawer && isGuesser) {
+            targetNo = Math.floor(Math.random() * targets.length);
+
+            let targetData = {
+                target: targets[targetNo],
+            };
+            io.sockets.emit('new-round', targetData);
+
+            // counter variable 
+            var counter = 0;
+            // time limit
+            var seconds = timeLimit;
+            // temporary variable for storing how far we have to go in the countdown
+            var remaining;
+            // set a new interval to go off every second and keep the countdown synced among all players
+            var interval = setInterval(function () {
+                // perform the calculation for how many seconds left
+                remaining = seconds - Math.ceil(counter / 1000);
+                // broadcast how advanced the countdown is
+                io.sockets.emit('countdown', remaining);
+                if (counter >= timeLimit * 1000 || roundOver) {
+                    // countdown is finished tell the client to change the views.
+                    io.sockets.emit('round-ended');
+                    clearInterval(interval);
+                }
+                counter += 1000;
+            }, 1000);
+        } else {
+            io.sockets.emit('roles-problem');
+        }
+
+
+    })
+
+    socket.on('end-round', () => {
+        console.log('admin has ended the round');
+
+        io.sockets.emit('round-ended');
+    })
+
+
+    //Drawer messages
+
+    //Listen for a message named 'clear-canvas' from this client
+    socket.on('clear-canvas', () => {
+        // console.log("Received: 'clear-canvas'");
+        io.sockets.emit('clear-canvas');
+    });
+
+    //Listen for a message named 'draw-box' from this client
+    socket.on('draw-box', (data) => {
+        // console.log("Received: 'box' " + data);
+        io.sockets.emit('draw-box', data);
+    });
+
+    //guesser and drawer messages
+
+    socket.on('role-selected', (data) => {
+        socket.role = data.role;
+        var index = playerDB.findIndex(p => p.id == socket.id);
+        playerDB[index].role = data.role;
+        io.sockets.emit("update-playerlist", playerDB);
+    })
+
+    //guesser messages
+
+    //on receiving answer from the client
+    socket.on('make-guess', (guessData) => {
+        // console.log('Received guess: ' + guessData.guess);
+        if (guessData.guess == targets[targetNo]) {
+            socket.emit('guess-check', { answer: true });
+            io.sockets.emit('guess-made', { name: socket.username, guess: guessData.guess, answer: true })
+            //increase guesser score
+            var index = playerDB.findIndex(p => p.id == socket.id);
+            playerDB[index].score += guessData.time;
+            //increase drawers score
+            for (let i = 0; i < playerDB.length; i++) {
+                if (playerDB[i].role == "drawer") {
+                    playerDB[i].score += guessData.time / guessersNo;
+                    playerDB[i].score.toFixed(2);
+                }
+            }
+            io.sockets.emit("update-playerlist", playerDB);
+            numCorrect ++;
+            if (numCorrect == guessersNo){
+                roundOver = true;
+            }
+        } else {
+            socket.emit('guess-check', { answer: false })
+            io.sockets.emit('guess-made', { name: socket.username, guess: guessData.guess, answer: false })
+        }
+    })
 
     //Listen for this client to disconnect
     socket.on('disconnect', function () {
         console.log("A client has disconnected: " + socket.id);
+        var index = playerDB.findIndex(p => p.id == socket.id);
+        playerDB.splice(index, 1);
+        io.sockets.emit("update-playerlist", playerDB);
     });
+
 });
 
-drawer.on('connection', (socket) => {
-    console.log('drawer socket connected !!!!!!! : ' + socket.id);
 
-    socket.on('get-target', () => {
 
-        console.log('drawer client has requested a target');
-        targetNo = Math.floor(Math.random() * targets.length);
-        //send the target word to the drawer client
-        let targetData = {
-            target: targets[targetNo].target,
-        };
-        drawer.emit('give-target', targetData);
-        guesser.emit('new-round');
-        // //send the question + options  to the input client
-        // let inputdata = {
-        //     question : quiz[quizNo].question,
-        //     options : quiz[quizNo].options
-        // };
-        // input.emit('question', inputdata);
-    })
-
-    // socket.on('getanswer', () => {
-    //     output.emit('answers', answer);
-    // })
-    //Listen for a message named 'draw-box' from this client
-    socket.on('draw-box', (data) => {
-        console.log("Received: 'data' " + data);
-        drawer.emit('draw-box', data);
-        guesser.emit('draw-box', data);
-
-    });
-
-    //Listen for a message named 'clear' from this client
-    socket.on('clear', () => {
-        console.log("Received: 'clear'");
-        drawer.emit('clear');
-        guesser.emit('clear');
-
-    });
-})
-
-guesser.on('connection', (socket) => {
-    console.log('guesser socket connected : ' + socket.id);
-
-    //on receiving answer from the client
-    socket.on('make-guess', (data) => {
-        if (data.guess == targets[targetNo].target) {
-            socket.emit('guess-check', { answer: true });
-            drawer.emit('guess-made', { name: data.name, guess: data.guess, answer: true })
-        } else {
-            socket.emit('guess-check', { answer: false })
-            drawer.emit('guess-made', { name: data.name, guess: data.guess, answer: false })
-        }
-    })
-
-})

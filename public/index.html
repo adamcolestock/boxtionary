@@ -4,11 +4,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Page</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>Boxtionary</title>
 </head>
 
 <body>
-    <h1>Main Page</h1>
+    <div class="wrapper">
+        <div class="title-bar container">
+            <h1>Boxtionary</h1>
+        </div>
+        <div class="score-board container">
+            <div>
+                <h3>Players</h3>
+            </div>
+            <div id="player-list">
+            </div>
+        </div>
+        <div class="drawing-canvas container" id="sketch-holder">
+            <!-- <div>
+            </div> -->
+        </div>
+        <div class="player-controls container" id="player-controls">
+            <div>
+                <h3>Player Name: <span id="player-name">C3PO</span></h3>
+            </div>
+            <div id="guess-container">
+                <input type="text" id="guess-input" placeholder="Guess" />
+                <button class="button" id="send-button">Send</button>
+            </div>
+            <div id="role-container">
+                <div>
+                    <input type="radio" id="drawer" name="role-selection" value="drawer">
+                    <label for="drawer">Drawer</label>
+                </div>
+                <div>
+                    <input type="radio" id="guesser" name="role-selection" value="guesser" checked>
+                    <label for="guesser">Guesser</label>
+                </div>
+                <div>
+                    <button class="button" id="role-button">Submit</button>
+                </div>
+            </div>
+        </div>
+        <div class="admin-panel container">
+            <div>
+                <h3>Admin Panel</h3>
+            </div>
+            <div>
+                <button class="button" id="start-round"> Start Round </button>
+                <button hidden class="button" id="end-round"> End Round </button>
+            </div>
+        </div>
+        <div class="game-state container">
+            <div>
+                <p><strong><span id="target-word"></span></strong></p>
+            </div>
+            <div>
+                <h4 id="role-display"></h4>
+            </div>
+            <div>
+                <h4 id="timer"></h4>
+            </div>
+        </div>
+        <div class="message-stream container">
+            <div>
+                <h3>Messages</h3>
+            </div>
+            <div id="messages-box">
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.js"></script>
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
 </body>
