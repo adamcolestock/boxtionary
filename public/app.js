@@ -6,13 +6,17 @@ let messagesBox;
 let sendButton;
 let guessInput;
 let startButton;
+let clearButton;
+let gameSelection;
 let isAnswered = true;
 let playerName = "";
 let playerRole = "guesser"
 let playerScore = 0;
 let timeLeft = 0;
+let gameMode = 0;
+let modeData;
 
-let playerInfo = {"username":playerName, "role":playerRole, "score":playerScore};
+let playerInfo = { "username": playerName, "role": playerRole, "score": playerScore };
 
 window.addEventListener('load', () => {
 
@@ -21,18 +25,20 @@ window.addEventListener('load', () => {
   playersList = document.getElementById('player-list');
   guessInput = document.getElementById('guess-input');
   sendButton = document.getElementById('send-button');
+  clearButton = document.getElementById('clear-button');
   messagesBox = document.getElementById('messages-box');
   targetWord = document.getElementById('target-word');
   startButton = document.getElementById('start-round');
   endButton = document.getElementById('end-round');
   roleButton = document.getElementById('role-button');
   roleChoices = document.getElementsByName('role-selection');
+  gameSelection = document.getElementById('game-mode');
   roleDisplay = document.getElementById('role-display');
   timeDisplay = document.getElementById('timer');
 
   //Set the initial message
   messagesBox.innerHTML = "Welcome! <p> please select if you want to draw or guess";
-  
+
   //Add scroll to the messages box
   messagesBox.scrollTop = messagesBox.scrollHeight;
 
@@ -40,12 +46,13 @@ window.addEventListener('load', () => {
   guessInput.disabled = true;
   sendButton.disabled = true;
 
-  //Prompt immediately to get username
-  while (playerName == null || playerName == "") {
-    playerName = prompt("Please enter your name");
-  }
   nameDisplay.innerHTML = playerName;
-  playerInfo.username = playerName;
+
+  //Add a listener for gameSelection
+  gameSelection.addEventListener('change', (event) => {
+    gameMode = parseInt(event.target.value);
+    console.log('Game Mode changed to ' + gameMode);
+  });
 
   //Add a listener for the role submit button and send message when changed
   roleButton.addEventListener('click', () => {
@@ -59,9 +66,17 @@ window.addEventListener('load', () => {
     })
   });
 
+  //Add a listener for the clear canvas button
+  clearButton.addEventListener('click', () => {
+    socket.emit('clear-canvas');
+    console.log('clearing canvas');
+  });
+
   //Add listener to manual round start button for admin panel
   startButton.addEventListener('click', () => {
-    socket.emit('start-round');
+    modeData = createModeData(gameMode);
+    let data = {gameMode: gameMode, modeData: modeData};
+    socket.emit('start-round', data);
     console.log('starting round');
   });
 
@@ -84,7 +99,7 @@ window.addEventListener('load', () => {
   //Add listener to send button for submitting guesses if not answered
   sendButton.addEventListener('click', function () {
     let curGuess = guessInput.value;
-    let guessData = {"guess": curGuess,"time": timeLeft};
+    let guessData = { "guess": curGuess, "time": timeLeft };
 
     if (!isAnswered) {
       socket.emit('make-guess', guessData);
@@ -95,6 +110,11 @@ window.addEventListener('load', () => {
 //Listen for confirmation of connection and send playerInfo in response
 socket.on('connect', function () {
   console.log("Connected");
+  //Prompt immediately to get username
+  // while (playerName == null || playerName == "") {
+  playerName = prompt("Please enter your name");
+  // }
+  playerInfo.username = playerName;
   socket.emit('new-player', playerInfo);
 });
 
@@ -102,13 +122,20 @@ socket.on('update-playerlist', (data) => {
   updatePlayerList(data);
 })
 
+//Listen for updated game data and update
+socket.on('update-boxes', (data) => {
+  gameData = data;
+  console.log(gameData);
+});
+
 //Messages for the drawer only
 
 //Add each new guess to the messages box
 socket.on('guess-made', (data) => {
-  if (playerRole == "drawer") {
-    addGuessToPage(data);
-  }
+  // if (playerRole == "drawer") {
+  //   addGuessToPage(data);
+  // }
+  addGuessToPage(data);
 })
 
 
@@ -116,18 +143,18 @@ socket.on('guess-made', (data) => {
 
 socket.on('guess-check', (data) => {
   if (data.answer) {
-    document.getElementById('player-controls').style.backgroundColor = "#62ca7a";
+    // document.getElementById('player-controls').style.backgroundColor = "#62ca7a";
     isAnswered = true;
   } else {
-    document.getElementById('player-controls').style.backgroundColor = "#f33a66";
+    // document.getElementById('player-controls').style.backgroundColor = "#f33a66";
   }
 })
 
 //Messages for both drawers and guessers
 
 socket.on('new-round', (data) => {
-  // console.log('new round started');
-  // console.log(data);
+  console.log('new round started');
+  console.log(data);
   document.body.style.background = "#add8e6";
   messagesBox.innerHTML = "a new round has begun";
 
@@ -135,6 +162,9 @@ socket.on('new-round', (data) => {
     role.disabled = true;
   }
   roleButton.disabled = true;
+
+  gameMode = data.gameMode;
+  modeData = data.modeData;
 
   //for drawers
   if (playerRole == "drawer") {
@@ -163,7 +193,7 @@ socket.on('countdown', (timer) => {
 
 socket.on('round-ended', () => {
   // console.log('round has ended');
-  document.getElementById('player-controls').style.backgroundColor = "#add8e6";
+  // document.getElementById('player-controls').style.backgroundColor = "#add8e6";
   messagesBox.innerHTML = "the round has ended <p> please select if you want to draw or guess";
   guessInput.innerHTML = "";
   // guessInput.setAttribute('placeholder', "Guess");
@@ -178,16 +208,16 @@ socket.on('round-ended', () => {
 })
 
 //Update the scoreboard with current player data
-function updatePlayerList(playerData){
+function updatePlayerList(playerData) {
   playersList.innerHTML = "";
-  for (let i = 0; i < playerData.length; i++){
+  for (let i = 0; i < playerData.length; i++) {
     let playerEl = document.createElement('p');
     playerEl.innerHTML = playerData[i].username + " -- " + playerData[i].score + " pts";
     playersList.appendChild(playerEl);
   }
 }
 
-function addMsgToPage(message){
+function addMsgToPage(message) {
   let msgEl = document.createElement('p');
   msgEl.innerHTML = message;
   messagesBox.appendChild(msgEl);
@@ -209,114 +239,4 @@ function addGuessToPage(guessData) {
   }
 }
 
-// <----- p5 CODE HERE  ------>
 
-let boxX, boxY;
-let boxes = [];
-let isDrawing = false;
-let clearButton;
-
-function setup() {
-
-  // var canvasWidth = 0.9 * document.getElementById('sketch-holder').offsetWidth;
-
-  var canvas = createCanvas(800, 400);
-
-  // Move the canvas so it’s inside our <div id="sketch-holder">.
-  canvas.parent('sketch-holder');
-
-  background(255, 200, 200);
-
-  noFill();
-  stroke(0);
-  strokeWeight(2);
-
-  // space = createP('testing');
-  // space.parent('sketch-hodler');
-
-  clearButton = createButton('Clear Canvas');
-  clearButton.mousePressed(sendClear);
-  clearButton.parent('sketch-holder');
-
-  //Listen for draw-box and add new box to the canvas
-  socket.on('draw-box', (data) => {
-    addBox(data);
-  });
-
-  //Listen for clear-canvas and clear the canvas
-  socket.on('clear-canvas', () => {
-    clearCanvas();
-  });
-}
-
-function draw() {
-  background(255, 200, 200);
-
-  // draw the box currently being drawn
-  if (isDrawing) {
-    let boxWidth = mouseX - boxX;
-    let boxHeight = mouseY - boxY;
-    rect(boxX, boxY, boxWidth, boxHeight);
-  }
-
-  // draw the saved boxes
-  for (let i = 0; i < boxes.length; i++) {
-    boxes[i].display();
-  }
-}
-
-function mousePressed() {
-  if (playerRole == "drawer" && onCanvas()) {
-    isDrawing = true;
-    boxX = mouseX;
-    boxY = mouseY;
-  }
-}
-
-
-function mouseReleased() {
-  if (playerRole == "drawer" && onCanvas()) {
-    isDrawing = false;
-    let boxWidth = mouseX - boxX;
-    let boxHeight = mouseY - boxY;
-    let box = new Box(boxX, boxY, boxWidth, boxHeight);
-    socket.emit('draw-box', box);
-  }
-}
-
-function clearCanvas() {
-  boxes = [];
-}
-
-function sendClear() {
-  if (playerRole == "drawer") {
-    socket.emit('clear-canvas');
-    clearCanvas();
-  }
-}
-
-//Expects an object for box with x,y,w,h properties
-function addBox(box) {
-  boxes.push(new Box(box.x, box.y, box.w, box.h));
-}
-
-function onCanvas() {
-  if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height){
-    return true;
-  } else {
-    return false;
-  }
-}
-
-class Box {
-  constructor(x, y, w, h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-  }
-
-  display() {
-    rect(this.x, this.y, this.w, this.h);
-  }
-}

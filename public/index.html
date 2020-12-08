@@ -9,7 +9,78 @@
 </head>
 
 <body>
-    <div class="wrapper">
+    <section class="header-container">
+        <h1 id="main-title">WHAT.DAT?</h1>
+    </section>
+    <div class="main-wrapper">
+        <div class="upper-display box container">
+            <div class="item" id="timer"></div>
+            <div class="item" id="target-word"></div>
+        </div>
+
+        <div class="score-board box column-container">Scoreboard
+            <div id="player-list">
+            </div>
+            <div class="scoreboard-item">NAME<BR>INFO</div>
+            <div>
+                <button class="button" id="start-round"> Start Round </button>
+                <button hidden class="button" id="end-round"> End Round </button><P></P>
+
+                <label for="game-mode">Choose a game mode:</label>
+
+                <select name="game-mode" id="game-mode">
+                    <option value="0">Boxes</option>
+                    <option value="1">Dots</option>
+                    <option value="2">Sticks</option>
+                </select>
+
+            </div>
+        </div>
+
+        <div class="drawing-canvas box container">
+            <div id="sketch-holder"></div>
+        </div>
+
+        <div class="lower-display box container">
+            <div class="button-container">
+                <button class="button" id="clear-button">Clear Canvas</button>
+            </div>
+
+            <!-- <div class="display-container">&nbsp;GAME MODE INFO&nbsp;</div> -->
+        </div>
+
+        <div class="message-stream  box column-container">
+            <div class="messages-container">MESSAGES</div><BR>
+            <div id="messages-box">
+            </div>
+            <div>
+                <h5>Player Name: <span id="player-name">C3PO</span></h5>
+            </div>
+            <div id="guess-container">
+                <input type="text" id="guess-input" placeholder="Guess" />
+                <button class="button" id="send-button">Send</button>
+            </div>
+            <div id="role-container">
+                <div>
+                    <input type="radio" id="drawer" name="role-selection" value="drawer">
+                    <label for="drawer">Drawer</label>
+                </div>
+                <div>
+                    <input type="radio" id="guesser" name="role-selection" value="guesser" checked>
+                    <label for="guesser">Guesser</label>
+                </div>
+                <div>
+                    <button class="button" id="role-button">Submit</button>
+                </div>
+                <div>
+                    <h4 id="role-display"></h4>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- <div class="wrapper">
         <div class="title-bar container">
             <h1>Boxtionary</h1>
         </div>
@@ -21,8 +92,7 @@
             </div>
         </div>
         <div class="drawing-canvas container" id="sketch-holder">
-            <!-- <div>
-            </div> -->
+
         </div>
         <div class="player-controls container" id="player-controls">
             <div>
@@ -73,9 +143,10 @@
             <div id="messages-box">
             </div>
         </div>
-    </div>
+    </div> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.js"></script>
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script src="sketch.js"></script>
     <script src="app.js"></script>
 </body>
 
