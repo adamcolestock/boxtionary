@@ -4,36 +4,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="style.css">
-    <title>Boxtionary</title>
+    <title>Render Me This</title>
 </head>
 
 <body>
-    <section class="header-container">
-        <h1 id="main-title">WHAT.DAT?</h1>
-    </section>
+    <!-- <section class="header-container">
+        <h1 id="main-title">Render Me This</h1>
+    </section> -->
     <div class="main-wrapper">
+
         <div class="upper-display box container">
             <div class="item" id="timer"></div>
+            <div class="item" id="main-title">Render Me This:</div>
             <div class="item" id="target-word"></div>
         </div>
 
-        <div class="score-board box column-container">Scoreboard
-            <div id="player-list">
+        <div class="score-board box column-container">
+            <h2>Scoreboard</h2>
+            <div class="item" id="player-list">
             </div>
-            <div class="scoreboard-item">NAME<BR>INFO</div>
-            <div>
-                <button class="button" id="start-round"> Start Round </button>
-                <button hidden class="button" id="end-round"> End Round </button><P></P>
-
+            <div hidden class="scoreboard-item">NAME<BR>INFO</div>
+            <div class="column-container">
                 <label for="game-mode">Choose a game mode:</label>
 
                 <select name="game-mode" id="game-mode">
                     <option value="0">Boxes</option>
                     <option value="1">Dots</option>
                     <option value="2">Sticks</option>
+                    <option value="3">Slices</option>
                 </select>
 
+                <div>
+                    <button class="admin-button" id="start-round"> Start Round </button><BR>
+                    <!-- </div> -->
+                    <!-- <div> -->
+                    <!-- <button hidden class="button" id="end-round"> End Round </button> -->
+                </div>
             </div>
         </div>
 
@@ -42,18 +52,20 @@
         </div>
 
         <div class="lower-display box container">
-            <div class="button-container">
+            <div class="item" class="button-container">
                 <button class="button" id="clear-button">Clear Canvas</button>
             </div>
 
-            <!-- <div class="display-container">&nbsp;GAME MODE INFO&nbsp;</div> -->
+            <div class="item" class="display-container">Game Mode Instructions</div>
         </div>
 
         <div class="message-stream  box column-container">
-            <div class="messages-container">MESSAGES</div><BR>
-            <div id="messages-box">
+            <div class="messages-container">
+                <h2>Messages</h2>
             </div>
-            <div>
+            <div class="item" id="messages-box">
+            </div>
+            <div hidden>
                 <h5>Player Name: <span id="player-name">C3PO</span></h5>
             </div>
             <div id="guess-container">
@@ -80,70 +92,6 @@
 
     </div>
 
-    <!-- <div class="wrapper">
-        <div class="title-bar container">
-            <h1>Boxtionary</h1>
-        </div>
-        <div class="score-board container">
-            <div>
-                <h3>Players</h3>
-            </div>
-            <div id="player-list">
-            </div>
-        </div>
-        <div class="drawing-canvas container" id="sketch-holder">
-
-        </div>
-        <div class="player-controls container" id="player-controls">
-            <div>
-                <h3>Player Name: <span id="player-name">C3PO</span></h3>
-            </div>
-            <div id="guess-container">
-                <input type="text" id="guess-input" placeholder="Guess" />
-                <button class="button" id="send-button">Send</button>
-            </div>
-            <div id="role-container">
-                <div>
-                    <input type="radio" id="drawer" name="role-selection" value="drawer">
-                    <label for="drawer">Drawer</label>
-                </div>
-                <div>
-                    <input type="radio" id="guesser" name="role-selection" value="guesser" checked>
-                    <label for="guesser">Guesser</label>
-                </div>
-                <div>
-                    <button class="button" id="role-button">Submit</button>
-                </div>
-            </div>
-        </div>
-        <div class="admin-panel container">
-            <div>
-                <h3>Admin Panel</h3>
-            </div>
-            <div>
-                <button class="button" id="start-round"> Start Round </button>
-                <button hidden class="button" id="end-round"> End Round </button>
-            </div>
-        </div>
-        <div class="game-state container">
-            <div>
-                <p><strong><span id="target-word"></span></strong></p>
-            </div>
-            <div>
-                <h4 id="role-display"></h4>
-            </div>
-            <div>
-                <h4 id="timer"></h4>
-            </div>
-        </div>
-        <div class="message-stream container">
-            <div>
-                <h3>Messages</h3>
-            </div>
-            <div id="messages-box">
-            </div>
-        </div>
-    </div> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.js"></script>
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script src="sketch.js"></script>

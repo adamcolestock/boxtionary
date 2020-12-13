@@ -14,7 +14,8 @@ let playerRole = "guesser"
 let playerScore = 0;
 let timeLeft = 0;
 let gameMode = 0;
-let modeData;
+let modeData = null;
+let roundStarted = false;
 
 let playerInfo = { "username": playerName, "role": playerRole, "score": playerScore };
 
@@ -51,7 +52,7 @@ window.addEventListener('load', () => {
   //Add a listener for gameSelection
   gameSelection.addEventListener('change', (event) => {
     gameMode = parseInt(event.target.value);
-    console.log('Game Mode changed to ' + gameMode);
+    // console.log('Game Mode changed to ' + gameMode);
   });
 
   //Add a listener for the role submit button and send message when changed
@@ -68,23 +69,24 @@ window.addEventListener('load', () => {
 
   //Add a listener for the clear canvas button
   clearButton.addEventListener('click', () => {
+    resetLocalVariables();
     socket.emit('clear-canvas');
-    console.log('clearing canvas');
+    // console.log('clearing canvas');
   });
 
   //Add listener to manual round start button for admin panel
   startButton.addEventListener('click', () => {
     modeData = createModeData(gameMode);
-    let data = {gameMode: gameMode, modeData: modeData};
+    let data = { gameMode: gameMode, modeData: modeData };
     socket.emit('start-round', data);
     console.log('starting round');
   });
 
   //Add listener to manual round end button for admin panel
-  endButton.addEventListener('click', () => {
-    socket.emit('end-round');
-    console.log('this round has ended');
-  });
+  // endButton.addEventListener('click', () => {
+  //   socket.emit('end-round');
+  //   console.log('this round has ended');
+  // });
 
   //Add listener to guess input field so enter functions as a send
   guessInput.addEventListener("keyup", function (event) {
@@ -125,16 +127,13 @@ socket.on('update-playerlist', (data) => {
 //Listen for updated game data and update
 socket.on('update-boxes', (data) => {
   gameData = data;
-  console.log(gameData);
+  // console.log(gameData);
 });
 
 //Messages for the drawer only
 
 //Add each new guess to the messages box
 socket.on('guess-made', (data) => {
-  // if (playerRole == "drawer") {
-  //   addGuessToPage(data);
-  // }
   addGuessToPage(data);
 })
 
@@ -142,20 +141,30 @@ socket.on('guess-made', (data) => {
 //Messages for the initiating guesser only
 
 socket.on('guess-check', (data) => {
+  // change input field background based on correctness
   if (data.answer) {
-    // document.getElementById('player-controls').style.backgroundColor = "#62ca7a";
+    guessInput.style.backgroundColor = "#62ca7a";
     isAnswered = true;
   } else {
-    // document.getElementById('player-controls').style.backgroundColor = "#f33a66";
+    guessInput.style.backgroundColor = "#f33a66";
   }
+  let counter = 0;
+
+  // wait a bit and then switch back to default color
+  var interval = setInterval(function () {
+    if (counter == 1) {
+      guessInput.style.backgroundColor = "#f5f5f5";
+      clearInterval(interval);
+    }
+    counter++;
+  }, 500);
 })
 
 //Messages for both drawers and guessers
 
 socket.on('new-round', (data) => {
   console.log('new round started');
-  console.log(data);
-  document.body.style.background = "#add8e6";
+  // console.log(data);
   messagesBox.innerHTML = "a new round has begun";
 
   for (const role of roleChoices) {
@@ -168,7 +177,7 @@ socket.on('new-round', (data) => {
 
   //for drawers
   if (playerRole == "drawer") {
-    targetWord.innerHTML = "Please draw a " + data.target;
+    targetWord.innerHTML = data.target;
     guessInput.disabled = true;
     sendButton.disabled = true;
   }
@@ -180,6 +189,8 @@ socket.on('new-round', (data) => {
     targetWord.innerHTML = "";
     isAnswered = false;
   }
+
+  roundStarted = true;
 })
 
 socket.on('roles-problem', () => {
@@ -193,7 +204,6 @@ socket.on('countdown', (timer) => {
 
 socket.on('round-ended', () => {
   // console.log('round has ended');
-  // document.getElementById('player-controls').style.backgroundColor = "#add8e6";
   messagesBox.innerHTML = "the round has ended <p> please select if you want to draw or guess";
   guessInput.innerHTML = "";
   // guessInput.setAttribute('placeholder', "Guess");
@@ -205,6 +215,8 @@ socket.on('round-ended', () => {
   sendButton.disabled = true;
   targetWord.innerHTML = "";
   timeDisplay.innerHTML = "";
+
+  resetGameVariables();
 })
 
 //Update the scoreboard with current player data
@@ -225,16 +237,17 @@ function addMsgToPage(message) {
 
 function addGuessToPage(guessData) {
   //Create a message string and page element
+  // console.log(guessData);
   let newGuess = guessData.name + " guessed " + guessData.guess;
   let guessEl = document.createElement('p');
   guessEl.innerHTML = newGuess;
 
-  //Add the element with the message to the page
-  messagesBox.appendChild(guessEl);
-
-  if (guessData.answer) {
+  if (!guessData.answer) {
+    //Add the element with the message to the page
+    messagesBox.appendChild(guessEl);
+  } else {
     let successEl = document.createElement('p');
-    successEl.innerHTML = "Target word guessed!!";
+    successEl.innerHTML = guessData.name + " guessed the correct word!!";
     messagesBox.appendChild(successEl);
   }
 }

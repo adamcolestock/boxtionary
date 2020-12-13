@@ -1,13 +1,12 @@
+const e = require('express');
 let express = require('express');
 let app = express();
 app.use('/', express.static('public'));
 
 //Set target words
-let targets = ["pizza", "flower", "car", "ice cream", "bicycle", "sun", "camel", "tree","umbrella", "suitcase", "bed", "chair", "boat", "lion", "snake", "doorknob", "earth", "moustache", "lipstick", "guitar", "shoe", "missile", "heart", "banana", "clown"];
+let targets = ["pizza", "flower", "car", "ice cream", "sun", "camel", "tree", "umbrella", "suitcase", "bed", "chair", "boat", "lion", "snake", "earth", "moustache", "guitar", "shoe", "rocket", "heart", "banana", "clown", "brain", "eye", "fish", "hammer", "mountain", "mouth", "snowman", "hat", "windmill"];
 
 let playerDB = [];
-
-
 
 let colors = ['#cb2c37', '#ea9a37', '#d2458a', '#cdcd43', '#71cd43', '#48a3a8', '#6fbdd0']
 
@@ -17,7 +16,7 @@ let drawersNo = 0;
 let guessersNo = 0;
 let numCorrect = 0;
 let roundOver = false;
-let roundData; //tracks gameMode, bg Objects, target word
+let roundData = null; //tracks gameMode, bg Objects, target word
 
 //Initialize the actual HTTP server
 let http = require('http');
@@ -42,9 +41,9 @@ io.sockets.on('connection', function (socket) {
         // socket.role = data.role;
         // socket.score = data.score;
         console.log('Registered new player ' + data.username);
-        playerDB.push({ id: socket.id, username: data.username, role: data.role, score: data.score, color: colors[playerDB.length], boxes: []});
+        playerDB.push({ id: socket.id, username: data.username, role: data.role, score: data.score, color: colors[playerDB.length], boxes: [] });
         io.sockets.emit('update-playerlist', playerDB);
-        console.log(playerDB[playerDB.length-1]);
+        console.log(playerDB[playerDB.length - 1]);
     })
 
 
@@ -77,7 +76,8 @@ io.sockets.on('connection', function (socket) {
         if (isDrawer && isGuesser) {
             targetNo = Math.floor(Math.random() * targets.length);
 
-            let roundData = {gameMode: data.gameMode, modeData: data.modeData, target: targets[targetNo]
+            roundData = {
+                gameMode: data.gameMode, modeData: data.modeData, target: targets[targetNo]
             };
             console.log('new round data: ' + roundData);
 
@@ -105,6 +105,7 @@ io.sockets.on('connection', function (socket) {
                 if (counter >= timeLimit * 1000 || roundOver) {
                     // countdown is finished tell the client to change the views.
                     io.sockets.emit('round-ended');
+                    roundData = null;
                     clearInterval(interval);
                 }
                 counter += 1000;
@@ -135,9 +136,17 @@ io.sockets.on('connection', function (socket) {
 
     //Listen for a message named 'draw-box' from this client
     socket.on('draw-box', (data) => {
-        console.log("Received: 'box' " + data);
+        // console.log("Received: 'box' " + data);
         var index = playerDB.findIndex(p => p.id == socket.id);
         playerDB[index].boxes.push(data);
+        io.sockets.emit('update-boxes', playerDB);
+    });
+
+    //Listen for a message named 'replace-boxes' from this client
+    socket.on('replace-boxes', (data) => {
+        // console.log("Replacing boxes " + data);
+        var index = playerDB.findIndex(p => p.id == socket.id);
+        playerDB[index].boxes = data;
         io.sockets.emit('update-boxes', playerDB);
     });
 
@@ -155,13 +164,14 @@ io.sockets.on('connection', function (socket) {
     //on receiving answer from the client
     socket.on('make-guess', (guessData) => {
         var index = playerDB.findIndex(p => p.id == socket.id);
-            playerDB[index].score += guessData.time;
+        guessData.guess = guessData.guess.toLowerCase();
         // console.log('Received guess: ' + guessData.guess);
-        if (guessData.guess == targets[targetNo]) {
+        if (guessData.guess == targets[targetNo].toLowerCase()) {
             //increase guesser score
+            playerDB[index].score += guessData.time;
             socket.emit('guess-check', { answer: true });
             io.sockets.emit('guess-made', { name: playerDB[index].username, guess: guessData.guess, answer: true });
-            
+
             //increase drawers score
             for (let i = 0; i < playerDB.length; i++) {
                 if (playerDB[i].role == "drawer") {
@@ -170,13 +180,13 @@ io.sockets.on('connection', function (socket) {
                 }
             }
             io.sockets.emit("update-playerlist", playerDB);
-            numCorrect ++;
-            if (numCorrect == guessersNo){
+            numCorrect++;
+            if (numCorrect == guessersNo) {
                 roundOver = true;
             }
         } else {
             socket.emit('guess-check', { answer: false })
-            io.sockets.emit('guess-made', { name: playerDB[index].username, guess: guessData.guess, answer: true });
+            io.sockets.emit('guess-made', { name: playerDB[index].username, guess: guessData.guess, answer: false });
         }
     })
 
